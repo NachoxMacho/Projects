@@ -20,7 +20,7 @@ int main()
 
 	// This is all you need to seed based on time
 	// Will now output seed to screen and file for troubleshooting
-	int seed = 1547829493; // time(NULL);
+	int seed = time(NULL);
 	cout << "Seed: " << seed << endl;
 	out_file << "Seed: " << seed << endl;
 	srand(seed);
@@ -67,10 +67,8 @@ int main()
 		{
 			overallBestFitness = p->bestFitness;
 			assert(p->population[0]->is_valid());
-			Graph * test = p->decode(p->population[0]);
-			trees << endl << endl << endl;
-			test->print(trees);
-			trees << endl;
+			delete best_tree;
+			best_tree = p->decode(p->population[0]);
 			assert(best_tree->isInConstraint());
 		}
 
@@ -88,68 +86,62 @@ int main()
 	delete p;
 
 	//output best tree to file
-	// trees << endl << "Best tree vertices (Prufer Mutation): " << endl;
-	// best_tree->print(trees);
-	// trees << endl;
+	trees << endl << "Best tree vertices (Prufer Mutation): " << endl;
+	best_tree->print(trees);
+	trees << endl;
 	analysis << best_tree->fitness() << ",";
-	delete best_tree;
-
-	return 0;
 
 	// ===== AL Run =====
 
-	for (int i = 1; i < max_mutations + 1; i += 2)
+	// instance of the adList
+	adList * AL = new adList(original, max_popSize);
+	AL->mutations = 1;
+	AL->op = AL_MUTATION;
+
+	// Stats for GA
+	totalGenerations = 0;
+	totalBestFitness = 0;
+	overallBestFitness = AL->bestFitness;
+	runStart = time(NULL);
+
+	out_file << "1 Tree Mutation AL Run, Best Fitness, Generations, Time" << endl;
+
+	// run the GA run amount of times
+	for (int j = 0; j < runs; j++)
 	{
-		// instance of the adList
-		adList * AL = new adList(original, max_popSize);
-		AL->mutations = i;
-		AL->op = AL_MUTATION;
+		AL->mutations = 1;
+		start = time(NULL);
 
-		// Stats for GA
-		totalGenerations = 0;
-		totalBestFitness = 0;
-		overallBestFitness = AL->bestFitness;
-		runStart = time(NULL);
-
-		out_file << i << " Tree Mutation AL Run, Best Fitness, Generations, Time" << endl;
-
-		// run the GA run amount of times
-		for (int j = 0; j < runs; j++)
+		while (AL->staleness < max_staleness)
+			AL->run_generation();
+		end = time(NULL);
+		totalGenerations += AL->generations;
+		totalBestFitness += AL->bestFitness;
+		if (AL->bestFitness < overallBestFitness)
 		{
-			AL->mutations = i;
-			start = time(NULL);
-
-			while (AL->staleness < max_staleness)
-				AL->run_generation();
-			end = time(NULL);
-			totalGenerations += AL->generations;
-			totalBestFitness += AL->bestFitness;
-			if (AL->bestFitness < overallBestFitness)
-			{
-				overallBestFitness = AL->bestFitness;
-				best_tree->copy(AL->population[0]->tree);
-			}
-
-			out_file << j << ", " << AL->bestFitness << ", " << AL->generations << ", " << end - start << endl;
-			cout << i << " Tree Mutation AL Run: " << j << " | Best Fitness: " << AL->bestFitness << " | Generations: " << AL->generations << " | Time: " << end - start << endl;
-
-			delete AL;
-			AL = new adList(original, max_popSize / 4);
-			AL->op = AL_MUTATION;
+			overallBestFitness = AL->bestFitness;
+			best_tree->copy(AL->population[0]->tree);
 		}
-		cout << "Finished " << i << " Tree Mutation AL Run | Best Fitness: " << overallBestFitness << " | Avg End Fitness: " << (float)totalBestFitness / runs << " | Avg Generations: " << (float)totalGenerations / runs << " | Time: " << time(NULL) - runStart << endl;
-		out_file << endl;
+
+		out_file << j << ", " << AL->bestFitness << ", " << AL->generations << ", " << end - start << endl;
+		cout << "1 Tree Mutation AL Run: " << j << " | Best Fitness: " << AL->bestFitness << " | Generations: " << AL->generations << " | Time: " << end - start << endl;
+
 		delete AL;
-
-		//output best tree to file
-		trees << endl << "Best tree vertices (" << i << " Tree Mutation): " << endl;
-		best_tree->print(trees);
-		trees << endl;
-		analysis << best_tree->fitness() << ",";
-		delete best_tree;
+		AL = new adList(original, max_popSize);
+		AL->op = AL_MUTATION;
 	}
+	out_file << endl;
+	delete AL;
 
-	return 0;
+	cout << "Finished 1 Tree Mutation AL Run | Best Fitness: " << overallBestFitness << " | Avg End Fitness: " << (float)totalBestFitness / runs << " | Avg Generations: " << (float)totalGenerations / runs << " | Time: " << time(NULL) - runStart << endl;
+
+
+	//output best tree to file
+	trees << endl << "Best tree vertices (1 Tree Mutation): " << endl;
+	best_tree->print(trees);
+	trees << endl;
+	analysis << best_tree->fitness() << ",";
+	delete best_tree;
 	
 	// ===== Greedy Run =====
 
@@ -199,15 +191,21 @@ int main()
 	trees << endl;
 	analysis << g_overall_best_tree->fitness() << ",";
 
+	cout << "Deleting Extras" << endl;
+
 	// cleanup
 	delete original;
 	delete best_tree;
 	delete g_overall_best_tree;
 	delete greedy;
 
+	cout << "Deleted Extras" << endl;
+
 	out_file.close();
 	trees.close();
 	analysis.close();
+
+	cout << "Closed Files" << endl;
 
 	return 0;
 }

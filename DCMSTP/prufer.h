@@ -66,6 +66,8 @@ struct p_chromosome
 	// ===== is_valid =====
 	// a string is valid if each vertex has a degree <= MAX_DEGREE
 	bool is_valid() { for (int i = 0; i < GRAPH_VERTICES; i++) { if (degree(i) > MAX_DEGREE || pstring[i] == -1) return false; } return true; }
+
+	bool equal(p_chromosome * p) { for (int i = 0; i < STRING_LENGTH; i++) { if (pstring[i] != p->pstring[i]) return false; } return true; }
 };
 
 class prufer
@@ -95,6 +97,7 @@ public:
 		{
 			population[i] = new p_chromosome;
 			randomize(population[i]);
+			edge_mutate(population[i]);
 			population[i]->score = score_fitness(population[i]);
 			if (PRUFER_DEBUG) cout << "I: " << i << " | Score: " << population[i]->score << endl;
 
@@ -111,9 +114,34 @@ public:
 		for (int i = 0; i < GRAPH_VERTICES; i++) { counts[i] = 1; }
 		for (int i = 0; i < STRING_LENGTH; i++) { counts[p->pstring[i]]++; }
 
+		int min = 0;
+		for (int i = 0; i < GRAPH_VERTICES; i++) { if (counts[i] == 1) { min = i; break; } }
+
 		for (int i = 0; i < STRING_LENGTH; i++)
 		{
-			for (int j = 0; j < GRAPH_VERTICES; j++)
+			int pos = p->pstring[i];
+			
+
+			if (min > pos)
+			{
+				assert(base->vertices[pos].connected_vertices[min - 1]->id == min);
+				score += base->vertices[pos].connected_vertices_weights[min - 1];
+			}
+			else
+			{
+				assert(base->vertices[pos].connected_vertices[min]->id == min);
+				score += base->vertices[pos].connected_vertices_weights[min];
+			}
+			
+			counts[pos]--;
+			if (min > pos && counts[pos] == 1)
+				min = pos;
+			else
+				for (int j = 0; j < GRAPH_VERTICES; j++) { if (counts[j] == 1) { min = j; break; } }
+
+
+
+			/*for (int j = 0; j < GRAPH_VERTICES; j++)
 			{
 				if (counts[j] == 1)
 				{
@@ -135,7 +163,7 @@ public:
 					counts[j]++, counts[p->pstring[i]]--;
 					break;
 				}
-			}
+			}*/
 		}
 		int a;
 
@@ -295,15 +323,22 @@ public:
 		// 3. basic tournament selection
 		for (int i = 1; i < max_popSize; i++)
 		{
-			int one = rand() % popSize;
-			int two = rand() % popSize;
+			int one = rand() % max_popSize;
+			int two = rand() % max_popSize;
+
+			//while (two == one || population[two]->equal(population[one]))
+			//{
+			//	if (two != one)
+			//		cout << one << " and " << two << " are the same string." << endl;
+			//	two = rand() % max_popSize;
+			//}
 
 			new_generation[i]->copy( (population[one]->score < population[two]->score) ? population[one] : population[two] );
 
 			if (!new_generation[i]->is_valid()) new_generation[i]->print(cout);
 			assert(new_generation[i]->is_valid());
 
-			edge_mutate(new_generation[i]);
+			edge_crossover(new_generation[i], (population[one]->score < population[two]->score) ? population[two] : population[one] );
 
 			// make sure the mutated tree is connected
 			if (!new_generation[i]->is_valid()) new_generation[i]->print(cout);
@@ -326,25 +361,57 @@ public:
 		}
 	}
 
+	/// ===== edge_mutate =====
+	/// first version of mutation
+	/// will change a number in the chromosome 'p'
+	/// position of change and number are random
+	/// 1. validate the beginning chromosome
+	/// 2. count the degree of all vertices
+	/// 3. pick a vertex that is under the maximum
+	/// 4. change the string 
+	/// 5. validate the ending chromosome
 	void edge_mutate(p_chromosome * p)
 	{
+		// 1. validate the beginning chromosome
 		if (!p->is_valid()) p->print(cout);
 		assert(p->is_valid());
-		int vertex = rand() % STRING_LENGTH;
-		int potential[GRAPH_VERTICES], vertices[GRAPH_VERTICES];
-		int pot_vertices = 0;
 
-		for (int i = 0; i < GRAPH_VERTICES; i++) { potential[i] = 1; }
-		for (int i = 0; i < STRING_LENGTH; i++) { potential[p->pstring[i]]++; }
-		for (int i = 0; i < GRAPH_VERTICES; i++) { if (potential[i] < MAX_DEGREE && i != p->pstring[vertex]) vertices[pot_vertices++] = i; }
+		// vertices is a list of vertices that are not at the maximum count
+		// pot_vertices is how many vertices are in vertices
+		// pos is the position in p->pstring for the change
+		// counts is a list of all vertices and their degree
+		int counts[GRAPH_VERTICES], vertices[GRAPH_VERTICES];
+		int pot_vertices = 0, pos = rand() % STRING_LENGTH;
 
-		p->pstring[vertex] = vertices[rand() % pot_vertices];
+		// setup the counts array, each vertex has a degree at least 1
+		for (int i = 0; i < GRAPH_VERTICES; i++) { counts[i] = 1; }
 
+		// 2. count the degree of all vertices
+		// the degree of a vertex is directly related to how many times it appears in the string
+		// if 'k' is how many times the vertex appears in the string, then 'k' + 1 is it's degree
+		for (int i = 0; i < STRING_LENGTH; i++) { counts[p->pstring[i]]++; }
+
+		// 3. pick a vertex that is under the maximum
+		// go through the counts array, and store all vertices that are available and increase pot_vertices each time
+		// NOTE: the vertex given by p->pstring[pos] is not added to the list do that change always happens
+		for (int i = 0; i < GRAPH_VERTICES; i++) { if (counts[i] < MAX_DEGREE && i != p->pstring[pos]) vertices[pot_vertices++] = i; }
+
+		// make sure there is at least one potential change
+		assert(pot_vertices > 0);
+
+		// 4. change the string 
+		p->pstring[pos] = vertices[rand() % pot_vertices];
+
+		// 5. validate the ending chromosome
 		if (!p->is_valid()) p->print(cout);
 		assert(p->is_valid());
 	}
 
-	void edge_mutate(p_chromosome * p, int vertex, bool validate = true)
+	// ===== edge_mutate =====
+	// second version of mutation
+	// will change the number at position 'vertex' of chromosome 'p'
+	// will validate the chromosome is correct before and after unless 'validate' is set to false
+	void edge_mutate(p_chromosome * p, int pos, bool validate = true)
 	{
 		if (validate && !p->is_valid()) p->print(cout);
 		assert(!validate || p->is_valid());
@@ -354,14 +421,50 @@ public:
 
 		for (int i = 0; i < GRAPH_VERTICES; i++) { potential[i] = 1; }
 		for (int i = 0; i < STRING_LENGTH; i++) { potential[p->pstring[i]]++; }
-		for (int i = 0; i < GRAPH_VERTICES; i++) { if (potential[i] < MAX_DEGREE && i != p->pstring[vertex]) vertices[pot_vertices++] = i; }
+		for (int i = 0; i < GRAPH_VERTICES; i++) { if (potential[i] < MAX_DEGREE && i != p->pstring[pos]) vertices[pot_vertices++] = i; }
 
-		p->pstring[vertex] = vertices[rand() % pot_vertices];
+		assert(pot_vertices > 0);
+
+		p->pstring[pos] = vertices[rand() % pot_vertices];
 
 		if (validate && !p->is_valid()) p->print(cout);
 		assert(!validate || p->is_valid());
 	}
 
+	// ===== edge_crossover =====
+	void edge_crossover(p_chromosome * o, p_chromosome * p)
+	{
+		assert(o->is_valid());
+		assert(p->is_valid());
+
+		int counts[GRAPH_VERTICES], potential[GRAPH_VERTICES];
+		int pot_vertices = 0;
+		for (int i = 0; i < GRAPH_VERTICES; i++) { counts[i] = 1; }
+		for (int i = 0; i < STRING_LENGTH; i++) { counts[o->pstring[i]]++; }
+		for (int i = 0; i < STRING_LENGTH; i++) { if (o->pstring[i] != p->pstring[i] && counts[p->pstring[i]] < MAX_DEGREE) potential[pot_vertices++] = i; }
+
+		if (pot_vertices == 0)
+		{
+			edge_mutate(o);
+			return;
+			
+			/*cout << "P: ";
+			p->print(cout);
+			cout << "O: ";
+			o->print(cout);
+			cout << endl;*/
+		}
+		assert(pot_vertices > 0);
+		int pos = potential[rand() % pot_vertices];
+		o->pstring[pos] = p->pstring[pos];
+
+		assert(o->is_valid());
+		assert(p->is_valid());
+	}
+
+	// ===== randomize =====
+	// will generate a random chromosome given a pointer 'p'
+	// uses the second version of edge mutate to not check for a valid chromosome till the end.
 	void randomize(p_chromosome * p) { for (int i = 0; i < STRING_LENGTH; i++) { edge_mutate(p, i, false); } assert(p->is_valid()); }
 };
 
