@@ -327,7 +327,7 @@ void adList::connect_partitions(Graph * tree, int rootID)
 
 	// 7. connect the vertex
 	tree->connect(&tree->vertices[in->id], &tree->vertices[out->id], edge_weight);
-	assert(tree->find_weight(in->id, out->id) == base->find_weight(in->id, out->id));
+	assert(tree->find_weight(in->id, out->id, true) == base->find_weight(in->id, out->id));
 }
 
 void adList::tree_crossover(Graph * parent1, Graph * parent2, Graph * offspring)
