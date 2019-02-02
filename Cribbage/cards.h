@@ -121,15 +121,6 @@ public: // ========== METHODS ==========
 		for (int i = 0; i < d->cards.size(); i++)
 			this->cards.push_back(d->cards[i]);
 	}
-
-	//// ===== CONSTRUCTOR =====
-	//// will copy all the cards from 'd' into this deck
-	//deck(deck &d)
-	//{
-	//	this->cards.clear();
-	//	for (int i = 0; i < d.cards.size(); i++)
-	//		this->cards.push_back(d.cards[i]);
-	//}
 	
 	// ===== DRAW =====
 	// if index is out of bounds a generic constructor card is returned which is 0 of Hearts
@@ -236,40 +227,6 @@ public: // ========== METHODS ==========
 
 		return new_deck;
 	}
-
-	// ===== EXTRAS =====
-	/*
-	void push_back(card c) { cards.push_back(c); }
-	card pop_back() { if (cards.size() > 0) { card c = cards[size() - 1]; cards.pop_back(); return c; } }
-	void operator -= (deck d)
-	{
-	for (int i = 0; i < d.size(); i++)
-	remove(d[i]);
-	}
-	void operator += (deck d)
-	{
-	for (int i = 0; i < d.size(); i++)
-	add(d[i]);
-	}
-	deck operator + (deck d)
-	{
-	deck new_deck(this);
-
-	for (int i = 0; i < d.cards.size(); i++)
-	new_deck.cards.push_back(d.cards[i]);
-
-	return new_deck;
-	}
-	deck operator - (deck d)
-	{
-	deck new_deck(this);
-	for (int i = 0; i < d.cards.size(); i++)
-	new_deck.remove(d.cards[i]);
-
-	return new_deck;
-	}
-	*/
-
 };
 
 class player
@@ -476,17 +433,17 @@ public:
 				// check sets of 2
 				if (p_hand[i].Value() + p_hand[j].Value() == 15)
 					hand_score += 2;
-				else /*if (p_hand[i].Value() + p_hand[j].Value() < 15)*/
+				else 
 					for (int k = j + 1; k < p_hand.size(); k++)
 						// check sets of 3
 						if (p_hand[i].Value() + p_hand[j].Value() + p_hand[k].Value() == 15)
 							hand_score += 2;
-						else /*if (p_hand[i].Value() + p_hand[j].Value() + p_hand[k].Value() < 15)*/
+						else 
 							for (int l = k + 1; l < p_hand.size(); l++)
 								// check sets of 4
 								if (p_hand[i].Value() + p_hand[j].Value() + p_hand[k].Value() + p_hand[l].Value() == 15)
 									hand_score += 2;
-								else /*if (p_hand[i].Value() + p_hand[j].Value() + p_hand[k].Value() + p_hand[l].Value() < 15)*/
+								else 
 									for (int m = l + 1; m < p_hand.size(); m++)
 										// check the set of 5
 										if (p_hand[i].Value() + p_hand[j].Value() + p_hand[k].Value() + p_hand[l].Value() + p_hand[m].Value() == 15)
