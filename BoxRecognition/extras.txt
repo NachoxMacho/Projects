@@ -1,0 +1,574 @@
+
+#define contrastFactor 2.5
+
+//void Contrast_Image(bmpBITMAP_FILE &img)
+//{
+//	int height = Assemble_Integer(img.infoheader.biHeight);
+//	int width = Assemble_Integer(img.infoheader.biWidth);
+//	for (int i = 0; i < height; i++)
+//	{
+//		for (int j = 0; j < width; j++)
+//		{
+//			if (i == height - 1 || j == width - 1 || i == BLACK || j == BLACK)
+//			{
+//				img.image_ptr[i][j] = WHITE;
+//				continue;
+//			}
+//			img.image_ptr[i][j] = contrastFactor * (img.image_ptr[i][j] - 128) + 128;
+//		}
+//	}
+//}
+//
+//// Will blur the image using a gaussian blur filter
+//void Smooth_Image(bmpBITMAP_FILE &img)
+//{
+//	int height = Assemble_Integer(img.infoheader.biHeight);
+//	int width = Assemble_Integer(img.infoheader.biWidth);
+//	for (int i = 1; i < height - 1; i++)
+//	{
+//		for (int j = 1; j < width - 1; j++)
+//		{
+//			img.image_ptr[i][j] =
+//				(img.image_ptr[i][j] * 4 +
+//				img.image_ptr[i + 1][j] * 2 +
+//				img.image_ptr[i - 1][j] * 2 +
+//				img.image_ptr[i][j + 1] * 2 +
+//				img.image_ptr[i][j - 1] * 2 +
+//				img.image_ptr[i + 1][j + 1] +
+//				img.image_ptr[i - 1][j - 1] +
+//				img.image_ptr[i - 1][j + 1] +
+//				img.image_ptr[i + 1][j - 1]) / 9;
+//		}
+//	}
+//}
+
+//// gy
+//bmpBITMAP_FILE V_Mask_Image(bmpBITMAP_FILE &img)
+//{
+//	bmpBITMAP_FILE v;
+//	Copy_Image(img, v);
+//	int height = Assemble_Integer(img.infoheader.biHeight);
+//	int width = Assemble_Integer(img.infoheader.biWidth);
+//
+//	for (int i = 1; i < height - 1; i++)
+//	{
+//		for (int j = 0; j < width - 1; j++)
+//		{
+//			int sum = (
+//				img.image_ptr[i - 1][j - 1] * -1 + // ul
+//				img.image_ptr[i - 1][j] * 0 +      // um
+//				img.image_ptr[i - 1][j + 1] * 1 +  // ur
+//				img.image_ptr[i][j - 1] * -2 +     // ml
+//				img.image_ptr[i][j] * 0 +          // mm
+//				img.image_ptr[i][j + 1] * 2 +      // mr
+//				img.image_ptr[i + 1][j - 1] * -1 + // ll
+//				img.image_ptr[i + 1][j] * 0 +      // lm
+//				img.image_ptr[i + 1][j + 1] * 1    // lr
+//				);
+//
+//			if (sum > 255)
+//				sum = 255;
+//
+//			v.image_ptr[i][j] = sum;
+//		}
+//	}
+//
+//	return v;
+//}
+//
+//// gx
+//bmpBITMAP_FILE H_Mask_Image(bmpBITMAP_FILE &img)
+//{
+//	bmpBITMAP_FILE h;
+//	Copy_Image(img, h);
+//	int height = Assemble_Integer(img.infoheader.biHeight);
+//	int width = Assemble_Integer(img.infoheader.biWidth);
+//
+//	for (int i = 1; i < height - 1; i++)
+//	{
+//		for (int j = 0; j < width - 1; j++)
+//		{
+//			int sum = (
+//				img.image_ptr[i - 1][j - 1] * -1 + // ul
+//				img.image_ptr[i - 1][j] * -2 +     // um
+//				img.image_ptr[i - 1][j + 1] * -1 + // ur
+//				img.image_ptr[i][j - 1] * 0 +      // ml
+//				img.image_ptr[i][j] * 0 +          // mm
+//				img.image_ptr[i][j + 1] * 0 +      // mr
+//				img.image_ptr[i + 1][j - 1] * 1 +  // ll
+//				img.image_ptr[i + 1][j] * 2 +      // lm
+//				img.image_ptr[i + 1][j + 1] * 1    // lr
+//				);
+//
+//			if (sum > 255)
+//				sum = 255;
+//
+//			h.image_ptr[i][j] = sum;
+//		}
+//	}
+//	return h;
+//}
+
+//
+///*
+// * (-1, -1) (-1,  0) (-1, +1)
+// * ( 0, -1) ( 0,  0) ( 0, +1)
+// * (+1, -1) (+1,  0) (+1, +1)
+// */
+//
+//bool lower(bmpBITMAP_FILE &img, int i, int j) { return (img.image_ptr[i][j] == BLACK && img.image_ptr[i + 1][j] == WHITE); }
+//bool upper(bmpBITMAP_FILE &img, int i, int j) { return (img.image_ptr[i][j] == BLACK && img.image_ptr[i - 1][j] == WHITE); }
+//bool left (bmpBITMAP_FILE &img, int i, int j) { return (img.image_ptr[i][j] == BLACK && img.image_ptr[i][j - 1] == WHITE); }
+//bool right(bmpBITMAP_FILE &img, int i, int j) { return (img.image_ptr[i][j] == BLACK && img.image_ptr[i][j + 1] == WHITE); }
+//
+//// 111
+//// BLACK1BLACK
+//// 111
+//bool a1(bmpBITMAP_FILE &img, int i, int j) 
+//{ 
+//	return (
+//	(img.image_ptr[i - 1][j - 1] == BLACK   || img.image_ptr[i][j - 1] == BLACK || img.image_ptr[i + 1][j - 1] == BLACK  ) &&
+//	(img.image_ptr[i - 1][j]     == WHITE && img.image_ptr[i][j]     == BLACK && img.image_ptr[i + 1][j]     == WHITE) &&
+//	(img.image_ptr[i - 1][j + 1] == BLACK   || img.image_ptr[i][j + 1] == BLACK || img.image_ptr[i + 1][j + 1] == BLACK  )); 
+//}
+//// 1BLACK1
+//// 111
+//// 1BLACK1
+//bool a2(bmpBITMAP_FILE &img, int i, int j)
+//{
+//	return (
+//		(img.image_ptr[i - 1][j - 1] == BLACK || img.image_ptr[i - 1][j] == BLACK || img.image_ptr[i - 1][j + 1] == BLACK) &&
+//		(img.image_ptr[i][j - 1]   == WHITE && img.image_ptr[i][j]     == BLACK && img.image_ptr[i][j + 1]     == WHITE) &&
+//		(img.image_ptr[i + 1][j - 1] == BLACK || img.image_ptr[i + 1][j] == BLACK || img.image_ptr[i + 1][j + 1] == BLACK));
+//}
+//// BLACK11 
+//// 111
+//// 11BLACK
+//bool a3(bmpBITMAP_FILE &img, int i, int j)
+//{
+//	return (
+//		(img.image_ptr[i + 1][j] == BLACK || img.image_ptr[i][j - 1] == BLACK || img.image_ptr[i + 1][j - 1] == BLACK) &&
+//		(img.image_ptr[i - 1][j - 1] == WHITE && img.image_ptr[i][j] == BLACK && img.image_ptr[i + 1][j + 1] == WHITE) &&
+//		(img.image_ptr[i - 1][j] == BLACK || img.image_ptr[i][j + 1] == BLACK || img.image_ptr[i - 1][j + 1] == BLACK));
+//}
+//// 11BLACK
+//// 111
+//// BLACK11
+//bool a4(bmpBITMAP_FILE &img, int i, int j)
+//{
+//	return (
+//		(img.image_ptr[i - 1][j]       == BLACK || img.image_ptr[i][j - 1] == BLACK || img.image_ptr[i - 1][j - 1] == BLACK) &&
+//		(img.image_ptr[i - 1][j + 1] == WHITE && img.image_ptr[i][j] == BLACK     && img.image_ptr[i + 1][j - 1] == WHITE) &&
+//		(img.image_ptr[i + 1][j]       == BLACK || img.image_ptr[i][j + 1] == BLACK || img.image_ptr[i + 1][j + 1] == BLACK));
+//}
+//
+//bool a(bmpBITMAP_FILE &img, int i, int j) { return (a1(img, i, j) || a2(img, i, j) || a3(img, i, j) || a4(img, i, j)); }
+//
+//// xxx
+////  10
+//// 01
+//bool b1(bmpBITMAP_FILE &img, int i, int j)
+//{
+//	return (
+//		(img.image_ptr[i - 1][j - 1] == BLACK   || img.image_ptr[i - 1][j] == BLACK || img.image_ptr[i - 1][j + 1] == BLACK) && // one edege pixel above
+//		(img.image_ptr[i][j + 1] == WHITE && img.image_ptr[i][j] == BLACK     && img.image_ptr[i + 1][j] == BLACK      && img.image_ptr[i + 1][j - 1] == WHITE)); // with
+//}
+//// x 0
+//// x11
+//// x0 
+//bool b2(bmpBITMAP_FILE &img, int i, int j)
+//{
+//	return (
+//		(img.image_ptr[i - 1][j - 1] == BLACK || img.image_ptr[i][j - 1] == BLACK || img.image_ptr[i + 1][j - 1] == BLACK) && // one edge pixel to the left
+//		(img.image_ptr[i + 1][j] == WHITE && img.image_ptr[i][j] == BLACK && img.image_ptr[i][j + 1] == BLACK && img.image_ptr[i - 1][j + 1] == WHITE )); // with
+//}
+////  10
+//// 01 
+//// xxx
+//bool b3(bmpBITMAP_FILE &img, int i, int j)
+//{
+//	return (
+//		(img.image_ptr[i + 1][j - 1] == BLACK || img.image_ptr[i + 1][j] == BLACK || img.image_ptr[i + 1][j + 1] == BLACK) && // one edge pixel below
+//		(img.image_ptr[i][j - 1] == WHITE && img.image_ptr[i][j] == BLACK && img.image_ptr[i - 1][j] == BLACK && img.image_ptr[i - 1][j + 1] == WHITE)); // with
+//}
+////  0x
+//// 11x
+//// 0 x
+//bool b4(bmpBITMAP_FILE &img, int i, int j)
+//{
+//	return (
+//		(img.image_ptr[i - 1][j + 1] == BLACK || img.image_ptr[i][j + 1] == BLACK || img.image_ptr[i + 1][j + 1] == BLACK) && // one edge pixel to the right
+//		(img.image_ptr[i - 1][j] == WHITE && img.image_ptr[i][j] == BLACK && img.image_ptr[i][j - 1] == BLACK && img.image_ptr[i + 1][j - 1] == WHITE)); // with
+//}
+//
+//bool b(bmpBITMAP_FILE &img, int i, int j) { return (b1(img, i, j) || b2(img, i, j) || b3(img, i, j) || b4(img, i, j)); }
+//
+//bool c1(bmpBITMAP_FILE &img, int i, int j)
+//{
+//	return (
+//		img.image_ptr[i][j] == BLACK && img.image_ptr[i + 1][j - 1] == BLACK &&
+//		img.image_ptr[i + 1][j] == WHITE && img.image_ptr[i][j - 1] == WHITE );
+//}
+//bool c2(bmpBITMAP_FILE &img, int i, int j)
+//{
+//	return (
+//		img.image_ptr[i][j] == BLACK && img.image_ptr[i + 1][j + 1] == BLACK &&
+//		img.image_ptr[i + 1][j] == WHITE && img.image_ptr[i][j + 1] == WHITE);
+//}
+//bool c3(bmpBITMAP_FILE &img, int i, int j)
+//{
+//	return (
+//		img.image_ptr[i][j] == BLACK && img.image_ptr[i - 1][j + 1] == BLACK &&
+//		img.image_ptr[i - 1][j] == WHITE && img.image_ptr[i][j + 1] == WHITE);
+//}
+//bool c4(bmpBITMAP_FILE &img, int i, int j)
+//{
+//	return (
+//		img.image_ptr[i][j] == BLACK && img.image_ptr[i - 1][j - 1] == BLACK &&
+//		img.image_ptr[i - 1][j] == WHITE && img.image_ptr[i][j - 1] == WHITE);
+//}
+//
+//bmpBITMAP_FILE Thin_Edge(bmpBITMAP_FILE &img)
+//{
+//	bmpBITMAP_FILE thin, copy;
+//
+//	Copy_Image(img, thin);
+//	Copy_Image(img, copy);
+//	Clear_Image(thin);
+//	Clear_Image(copy);
+//
+//	int cycle = 0;
+//	int height = Assemble_Integer(copy.infoheader.biHeight);
+//	int width = Assemble_Integer(copy.infoheader.biWidth);
+//
+//	while (cycle < 0)
+//	{
+//		// cout << "Thinning with cycle: " << cycle << endl;
+//		for (int i = 1; i < height - 1; i++)
+//		{
+//			for (int j = 1; j < width - 1; j++)
+//			{
+//				thin.image_ptr[i][j] = WHITE;
+//				if (a(img, i, j))
+//					thin.image_ptr[i][j] = BLACK;
+//				if ((cycle == 0 && (b1(img, i, j) || b2(img, i, j))) ||
+//					(cycle == 1 && (b3(img, i, j) || b4(img, i, j))) ||
+//					(cycle == 2 && (b1(img, i, j) || b4(img, i, j))) ||
+//					(cycle == 3 && (b2(img, i, j) || b3(img, i, j)))  )
+//					thin.image_ptr[i][j] = BLACK;
+//			}
+//		}
+//		
+//		if (Identical_Image(img, thin))
+//			break;
+//
+//		for (int i = 1; i < height - 1; i++)
+//		{
+//			for (int j = 1; j < width - 1; j++)
+//			{
+//				copy.image_ptr[i][j] = WHITE;
+//
+//				if ((cycle == 0 && lower(img, i, j)) ||
+//					(cycle == 1 && upper(img, i, j)) ||
+//					(cycle == 2 && left (img, i, j)) ||
+//					(cycle == 3 && right(img, i, j))  )
+//					copy.image_ptr[i][j] = BLACK;
+//			}
+//		}
+//
+//		for (int i = 0; i < height; i++)
+//			for (int j = 0; j < width; j++)
+//				if (thin.image_ptr[i][j] == BLACK)
+//					img.image_ptr[i][j] = WHITE;
+//				else if (copy.image_ptr[i][j] == BLACK)
+//					img.image_ptr[i][j] = WHITE;
+//
+//		cycle++;
+//		if (cycle == 4)
+//			cycle = 0;
+//	}
+//
+//	Remove_Image(copy);
+//
+//	return thin;
+//}
+
+
+//bool is_edge_pixel(bmpBITMAP_FILE &img, int i, int j)
+//{
+//	// ignore border elements
+//	if (i == 0 || j == 0 || i == Assemble_Integer(img.infoheader.biHeight) || j == Assemble_Integer(img.infoheader.biBitCount))
+//		return false;
+//
+//	int sumv = (
+//		img.image_ptr[i - 1][j - 1] * -1 + // ul
+//		img.image_ptr[i - 1][j] * 0 +      // um
+//		img.image_ptr[i - 1][j + 1] * 1 +  // ur
+//		img.image_ptr[i][j - 1] * -2 +     // ml
+//		img.image_ptr[i][j] * 0 +          // mm
+//		img.image_ptr[i][j + 1] * 2 +      // mr
+//		img.image_ptr[i + 1][j - 1] * -1 + // ll
+//		img.image_ptr[i + 1][j] * 0 +      // lm
+//		img.image_ptr[i + 1][j + 1] * 1    // lr
+//		);
+//
+//	//gx
+//	int sumh = (
+//		img.image_ptr[i - 1][j - 1] * -1 + // ul
+//		img.image_ptr[i - 1][j] * -2 +     // um
+//		img.image_ptr[i - 1][j + 1] * -1 + // ur
+//		img.image_ptr[i][j - 1] * 0 +      // ml
+//		img.image_ptr[i][j] * 0 +          // mm
+//		img.image_ptr[i][j + 1] * 0 +      // mr
+//		img.image_ptr[i + 1][j - 1] * 1 +  // ll
+//		img.image_ptr[i + 1][j] * 2 +      // lm
+//		img.image_ptr[i + 1][j + 1] * 1    // lr
+//		);
+//	cout << "Edge Pixel Result: " << sqrt(sumh * sumh + sumv * sumv) << " > " << edgeThreshold << endl;
+//	return sqrt(sumh * sumh + sumv * sumv) > edgeThreshold;
+//}
+//
+//line find_line(bmpBITMAP_FILE &img, bmpBITMAP_FILE &edge, int baseX, int baseY)
+//{
+//	bmpBITMAP_FILE angle = Angle_Image(edge);
+//	bool done = false;
+//	line base;
+//	pixel starting;
+//	starting.x = baseX, starting.y = baseY;
+//
+//	// start at the only point we know
+//	base.start.x = base.end.x = baseX;
+//	base.start.y = base.end.y = baseY;
+//	base.angle = angle.image_ptr[baseX][baseY];
+//	base.components.push_back(starting);
+//
+//	line new_line = base;
+//
+//	while (!done)
+//	{
+//		for (int i = 0; i < base.components.size(); i++)
+//		{
+//			cout << "Examining Neighbors of " << base.components[i].x << ", " << base.components[i].y << endl;
+// 			// upper left (-1, -1) // angle.image_ptr[base.components[i].x - 1][base.components[i].y - 1]
+//			if (edge.image_ptr[base.components[i].x - 1][base.components[i].y - 1] == BLACK)
+//				if (abs(get_pixel_angle(edge, base.components[i].x - 1, base.components[i].y - 1) - base.angle) < angleThreshold)
+//				{
+//					// if it is a pixel going in the same direction, probably the part of the same line
+//					pixel p;
+//					p.x = base.components[i].x - 1, p.y = base.components[i].y - 1;
+//					new_line.components.push_back(p);
+//				}
+//
+//			// upper middle (-1, 0)
+//			if (edge.image_ptr[base.components[i].x - 1][base.components[i].y] == BLACK)
+//				if (abs(get_pixel_angle(edge, base.components[i].x - 1, base.components[i].y) - base.angle) < angleThreshold)
+//				{
+//					// if it is a pixel going in the same direction, probably the part of the same line
+//					pixel p;
+//					p.x = base.components[i].x - 1, p.y = base.components[i].y;
+//					new_line.components.push_back(p);
+//				}
+//
+//			// upper right (-1, 1)
+//			if (edge.image_ptr[base.components[i].x - 1][base.components[i].y + 1] == BLACK)
+//				if (abs(get_pixel_angle(edge, base.components[i].x - 1, base.components[i].y + 1) - base.angle) < angleThreshold)
+//				{
+//					// if it is a pixel going in the same direction, probably the part of the same line
+//					pixel p;
+//					p.x = base.components[i].x - 1, p.y = base.components[i].y + 1;
+//					new_line.components.push_back(p);
+//				}
+//
+//			// middle left (0, -1)
+//			if (edge.image_ptr[base.components[i].x][base.components[i].y - 1] == BLACK)
+//				if (abs(get_pixel_angle(edge, base.components[i].x, base.components[i].y - 1) - base.angle) < angleThreshold)
+//				{
+//					// if it is a pixel going in the same direction, probably the part of the same line
+//					pixel p;
+//					p.x = base.components[i].x, p.y = base.components[i].y - 1;
+//					new_line.components.push_back(p);
+//				}
+//
+//			// middle middle (0, 0)
+//			if (edge.image_ptr[base.components[i].x][base.components[i].y] == BLACK)
+//				if (abs(get_pixel_angle(edge, base.components[i].x, base.components[i].y) - base.angle) < angleThreshold)
+//				{
+//					// if it is a pixel going in the same direction, probably the part of the same line
+//					pixel p;
+//					p.x = base.components[i].x, p.y = base.components[i].y;
+//					new_line.components.push_back(p);
+//				}
+//
+//			// middle right (0, -)
+//			if (edge.image_ptr[base.components[i].x][base.components[i].y + 1] == BLACK)
+//				if (abs(get_pixel_angle(edge, base.components[i].x, base.components[i].y + 1) - base.angle) < angleThreshold)
+//				{
+//					// if it is a pixel going in the same direction, probably the part of the same line
+//					pixel p;
+//					p.x = base.components[i].x, p.y = base.components[i].y + 1;
+//					new_line.components.push_back(p);
+//				}
+//
+//			// lower left (1, -1)
+//			if (edge.image_ptr[base.components[i].x + 1][base.components[i].y - 1] == BLACK)
+//				if (abs(get_pixel_angle(edge, base.components[i].x + 1, base.components[i].y - 1) - base.angle) < angleThreshold)
+//				{
+//					// if it is a pixel going in the same direction, probably the part of the same line
+//					pixel p;
+//					p.x = base.components[i].x + 1, p.y = base.components[i].y - 1;
+//					new_line.components.push_back(p);
+//				}
+//
+//			// lower middle (1, 0)
+//			if (edge.image_ptr[base.components[i].x + 1][base.components[i].y] == BLACK)
+//				if (abs(get_pixel_angle(edge, base.components[i].x + 1, base.components[i].y) - base.angle) < angleThreshold)
+//				{
+//					// if it is a pixel going in the same direction, probably the part of the same line
+//					pixel p;
+//					p.x = base.components[i].x + 1, p.y = base.components[i].y;
+//					new_line.components.push_back(p);
+//				}
+//
+//			// lower right (1, 1)
+//			if (edge.image_ptr[base.components[i].x + 1][base.components[i].y + 1] == BLACK)
+//				if (abs(get_pixel_angle(edge, base.components[i].x + 1, base.components[i].y + 1) - base.angle) < angleThreshold)
+//				{
+//					// if it is a pixel going in the same direction, probably the part of the same line
+//					pixel p;
+//					p.x = base.components[i].x + 1, p.y = base.components[i].y + 1;
+//					new_line.components.push_back(p);
+//				}
+//		}
+//
+//		if (new_line == base)
+//			done = true;
+//		else
+//		{
+//			cout << "Found more to the line " << endl;
+//			base = new_line;
+//			base.begin();
+//			base.last();
+//		}
+//	}
+//
+//	Remove_Image(angle);
+//	return new_line;
+//}
+
+
+
+	// copy the orig image to removal, keep is a blank image
+	//bmpBITMAP_FILE *removal = new bmpBITMAP_FILE, *keep = new bmpBITMAP_FILE;
+	//char file[] = "testThin.bmp";
+	//removal->copy(img);
+	//keep->copy(img);
+	//keep->clear();
+
+	//cout << "Examining Lines " << endl;
+
+	//// cout << "Finished small spot removal, going to line spot removal" << endl;
+	//int count = 0;
+
+	//// for each potential line
+	//for (int r = 0; r < houghH; r++)
+	//{
+	//	for (int t = 0; t < houghW; t++)
+	//	{
+	//		if (acc[r][t] == 0)
+	//			continue;
+
+	//		// for each line that exists
+	//		count++;
+
+	//		// while we are still making changes
+	//		pixel p[edgeGap];
+	//		p[1].x = p[1].y = p[edgeGap - 1].x = p[edgeGap - 1].y = 1;
+	//		int edgeCollision = edgeGap; // will be all pixels in the array until we start hitting the bottom edge
+
+	//		// scan each sequence of adjacent edgeGap pixels
+	//		while (edgeCollision == edgeGap)
+	//		{
+	//			// move the pixels down one spot
+	//			for (int i = 0; i < edgeCollision - 1; i++)
+	//				p[i] = p[i + 1];
+
+	//			// get the next pixel
+	//			p[edgeCollision - 1] = get_next_pixel(img, p[edgeCollision - 2], r, (double)t);
+
+	//			// if it's the end of the image, decrease the number of pixels to check, and mark the loop to end
+	//			if (p[edgeCollision - 1].x == -1)
+	//				edgeCollision--;
+	//			
+	//			if (edgeCollision < edgeGap)
+	//				assert(p[edgeCollision].x == -1);
+	//			else
+	//				assert(edgeCollision == edgeGap);
+
+	//			for (int i = 0; i < edgeCollision - 1; i++)
+	//			{
+	//				// advance till we find a white spot
+	//				if (img->image_ptr[p[i].x][p[i].y] == BLACK)
+	//				{
+	//					if (removal->image_ptr[p[i].x][p[i].y] == BLACK)
+	//						keep->image_ptr[p[i].x][p[i].y] = BLACK;
+	//					continue;
+	//				}
+
+	//				// check if there is a black pixel followed by another white pixel
+	//				for (int j = i + 1; j < edgeCollision; j++)
+	//				{
+	//					// if no black pixel initially, move i forward and check again
+	//					if (img->image_ptr[p[j].x][p[j].y] == WHITE && j == i + 1)
+	//						break;
+
+	//					// if black pixel, go until we hit a white pixel
+	//					if (img->image_ptr[p[j].x][p[j].y] == BLACK)
+	//						continue;
+
+	//					// must have found a spot between i and j
+	//					if (img->image_ptr[p[j].x][p[j].y] != WHITE)
+	//						cout << "DEBUG: I " << i << " | J " << j << " | Edge " << edgeCollision << " | Cord " << p[j].x << ", " << p[j].y  << " | Val " << img->image_ptr[p[j].x][p[j].y] << endl;
+	//					assert(img->image_ptr[p[j].x][p[j].y] == WHITE);
+
+	//					// for each pixel between i and j, remove it from the image
+	//					for (int k = i; k < j; k++)
+	//						removal->image_ptr[p[k].x][p[k].y] = WHITE;
+
+	//					i = j;
+	//					break;
+	//				}
+	//			}
+
+	//			//for (int i = 0; i < edgeCollision - 1; i++)
+	//			//{
+	//			//	// advance till we encounter the first white pixel in the subset
+	//			//	if (img->image_ptr[p[i + 1].x][p[i + 1].y] == WHITE || img->image_ptr[p[i].x][p[i].y] == BLACK)
+	//			//		continue;
+
+	//			//	for (int j = i + 1; j < edgeCollision; j++)
+	//			//	{
+	//			//		assert(p[j].x < Assemble_Integer(group->infoheader.biHeight) && p[j].x >= 0);
+	//			//		assert(p[j].y < Assemble_Integer(group->infoheader.biWidth) && p[j].y >= 0);
+	//			//		// if it is currently an edge pixel
+	//			//		if (img->image_ptr[p[j].x][p[j].y] == BLACK)
+	//			//			continue;
+
+	//			//		if (img->image_ptr[p[j].x][p[j].y] == WHITE)
+	//			//		{
+	//			//			// change all the black pixels to white
+	//			//			for (int k = i; k < j; k++)
+	//			//				if (img->image_ptr[p[k].x][p[k].y] == BLACK)
+	//			//					group->image_ptr[p[k].x][p[k].y] = WHITE, acc[r][t]--;
+
+	//			//			i = j;
+	//			//			break;
+	//			//		}
+	//			//	}
+	//			//}
+	//		}
+	//	}
+	//}
+
+	//Save_Bitmap_File(keep, file);
+	//cout << "Scanned image with " << count << " lines " << endl;
+	//return removal;
