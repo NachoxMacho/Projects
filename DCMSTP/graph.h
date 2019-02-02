@@ -81,12 +81,14 @@ public:
 
 	vertex vertices[GRAPH_VERTICES]; // an aray of vertices for the whole graph
 
+	// Constructor
 	Graph(bool randomize = false); // constructor to make a random graph by default, call graph(false) for a blank graph
-	// Graph();
 
 	// Modify Graph
 	void connect(vertex * a, vertex * b, int weight); // connect vertex a to vertex b
+	void connect(int a, int b, int weight); // connect vertex a to vertex b
 	void disconnect(vertex * a, vertex * b); // disconnect vertex a from vertex b
+	void disconnect(int a, int b); // disconnect vertex a from vertex b
 	void copy(Graph *g); // copy g into this graph
 	void clear();
 	
@@ -95,7 +97,7 @@ public:
 
 	// Scoring
 	int fitness(); // score the tree
-	int find_weight(int vertex1, int vertex2); // get the weight between 2 vertices
+	int find_weight(int vertex1, int vertex2, bool tree_search = false); // get the weight between 2 vertices
 	
 	// Graph Conditions
 	bool isGraphConnected(); // check if the graph is fully connected
@@ -139,14 +141,15 @@ Graph::Graph(bool randomize)
 	assert(isGraphConnected() || !randomize);
 }
 
-//Graph::Graph()
-//{
-//	for (int i = 0; i < GRAPH_VERTICES; i++)
-//	{
-//		vertices[i].connected_vertices_count = 0; // has 0 connections
-//		vertices[i].id = i; // assign id
-//	}
-//}
+void Graph::connect(int a, int b, int weight)
+{
+	connect(&vertices[a], &vertices[b], weight);
+}
+
+void Graph::disconnect(int a, int b)
+{
+	disconnect(&vertices[a], &vertices[b]);
+}
 
 void Graph::connect(vertex * a, vertex * b, int weight)
 {
@@ -366,8 +369,18 @@ bool Graph::isInConstraint()
 	return true;
 }
 
-int Graph::find_weight(int vertex1, int vertex2)
+int Graph::find_weight(int vertex1, int vertex2, bool tree_search)
 {
+	if (!tree_search)
+	{
+		if (vertex1 > vertex2)
+			return vertices[vertex1].connected_vertices_weights[vertex2];
+		else if (vertex2 > vertex1)
+			return vertices[vertex2].connected_vertices_weights[vertex1];
+		else
+			return -1;
+	}
+
 	// search for the edge between both vertices
 	// Only need to check one direction because edges are added to both vertices
 	for (int i = 0; i < vertices[vertex1].connected_vertices_count; i++)

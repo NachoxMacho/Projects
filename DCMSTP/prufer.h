@@ -5,9 +5,6 @@
 // Set to true for debugging purposes
 #define PRUFER_DEBUG false
 
-// Length of a prufer string
-#define STRING_LENGTH GRAPH_VERTICES - 2
-
 struct p_chromosome
 {
 	int score;
@@ -17,41 +14,18 @@ struct p_chromosome
 	// Create the chromosome
 	// if no argument is passed or false, a blank chromosome is generated with -1 in every slot
 	// if true is passed, pstring will be randomly filled with integers | NOTE: this will not score the chromosome
-	p_chromosome(bool randomize = false)
-	{
-		score = 0;
-		for (int i = 0; i < STRING_LENGTH; i++) pstring[i] = -1;
-	}
+	p_chromosome() { score = 0; }
 
 	// ===== copy =====
 	void copy(p_chromosome * p)
 	{
-		for (int i = 0; i < STRING_LENGTH; i++) this->pstring[i] = p->pstring[i];
+		std::copy(p->pstring, p->pstring + STRING_LENGTH, pstring);
 		this->score = p->score;
 	}
 
 	// ===== print =====
 	// output the string
 	void print(ostream & out_s) { for (int i = 0; i < STRING_LENGTH; i++) { out_s << pstring[i] << " "; } out_s << endl; }
-
-	// ===== find_edge =====
-	// will find the smallest number not in the string given by p
-	// if max is true, will return the largest number instead
-	// all returned numbers will be > -1 and < GRAPH_VERTICES
-	int find_edge(int p[STRING_LENGTH], bool max = false)
-	{
-		// find all numbers in the string
-		bool numbers[GRAPH_VERTICES];
-		for (int i = 0; i < GRAPH_VERTICES; i++) { numbers[i] = false; }
-		for (int i = 0; i < STRING_LENGTH; i++) { numbers[p[i]] = true; }
-
-		// return the smallest or largest (depending on max) NOT in the string
-		if (!max) { for (int i = 0; i < GRAPH_VERTICES; i++) { if (!numbers[i]) return i; } }
-		else { for (int i = GRAPH_VERTICES - 1; i > -1; i--) { if (!numbers[i]) return i; } }
-
-		// this should never happen
-		assert(false);
-	}
 
 	// ===== degree =====
 	// returns the degree of the vertex passed
@@ -65,7 +39,12 @@ struct p_chromosome
 
 	// ===== is_valid =====
 	// a string is valid if each vertex has a degree <= MAX_DEGREE
-	bool is_valid() { for (int i = 0; i < GRAPH_VERTICES; i++) { if (degree(i) > MAX_DEGREE || pstring[i] == -1) return false; } return true; }
+	bool is_valid() 
+	{ 
+		int counts[GRAPH_VERTICES] = { 0 };
+		for (int i = 0; i < STRING_LENGTH; i++) { if (++counts[pstring[i]] + 1 > MAX_DEGREE)return false; }
+		return true; 
+	}
 
 	bool equal(p_chromosome * p) { for (int i = 0; i < STRING_LENGTH; i++) { if (pstring[i] != p->pstring[i]) return false; } return true; }
 };
@@ -139,8 +118,6 @@ public:
 			else
 				for (int j = 0; j < GRAPH_VERTICES; j++) { if (counts[j] == 1) { min = j; break; } }
 
-
-
 			/*for (int j = 0; j < GRAPH_VERTICES; j++)
 			{
 				if (counts[j] == 1)
@@ -171,46 +148,6 @@ public:
 		for (int i = GRAPH_VERTICES - 1; i > -1; i--) { if (counts[i] == 1) { score += base->find_weight(a, i); break; } }
 
 		return score;
-
-		//int connection, rounds = 0;
-		//int temp[STRING_LENGTH];
-
-		//if (PRUFER_DEBUG) cout << "String: ";
-		//for (int i = 0; i < STRING_LENGTH; i++) { temp[i] = p->pstring[i]; if (PRUFER_DEBUG) cout << temp[i]; }
-		//if (PRUFER_DEBUG) cout << endl;
-
-		//while (rounds < STRING_LENGTH)
-		//{
-		//	if (PRUFER_DEBUG) cout << "Round: " << rounds << " | Score: " << score << endl;
-
-		//	// get the minimum value not existing in the string
-		//	connection = p->find_edge(temp);
-
-		//	if (PRUFER_DEBUG) cout << "Round: " << rounds << " | Found Edge: " << connection << endl;
-
-		//	// get the edge between that and the first element
-		//	score += base->find_weight(temp[0], connection);
-
-		//	if (PRUFER_DEBUG) cout << "Round: " << rounds << " | Score: " << score << endl;
-
-		//	if (PRUFER_DEBUG) cout << "Round: " << rounds << " | String: ";
-
-		//	// shift all elements in the array by -1
-		//	for (int i = 0; i < STRING_LENGTH - 1; i++) { temp[i] = temp[i + 1]; if(PRUFER_DEBUG) cout << temp[i]; }
-
-		//	// add connection to end of string
-		//	temp[STRING_LENGTH - 1] = connection;
-
-		//	if (PRUFER_DEBUG) cout << connection << endl;
-		//	rounds++;
-		//}
-
-		//// figure out the last connection
-		//connection = p->find_edge(temp);
-
-		//score += base->find_weight(connection, p->find_edge(temp, true));
-
-		//return score;
 	}
 
 	Graph * decode(p_chromosome * p)
@@ -361,15 +298,15 @@ public:
 		}
 	}
 
-	/// ===== edge_mutate =====
-	/// first version of mutation
-	/// will change a number in the chromosome 'p'
-	/// position of change and number are random
-	/// 1. validate the beginning chromosome
-	/// 2. count the degree of all vertices
-	/// 3. pick a vertex that is under the maximum
-	/// 4. change the string 
-	/// 5. validate the ending chromosome
+	// ===== edge_mutate =====
+	// first version of mutation
+	// will change a number in the chromosome 'p'
+	// position of change and number are random
+	// 1. validate the beginning chromosome
+	// 2. count the degree of all vertices
+	// 3. pick a vertex that is under the maximum
+	// 4. change the string 
+	// 5. validate the ending chromosome
 	void edge_mutate(p_chromosome * p)
 	{
 		// 1. validate the beginning chromosome

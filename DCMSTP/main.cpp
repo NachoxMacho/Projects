@@ -4,10 +4,10 @@
 #include "greedy.h"
 // #include "crossover.h"
 #include "prufer.h"
+#include "dandelion.h"
 using namespace std;
 
 #define runs P_RUNS
-//#define max_mutations 5
 
 int main()
 {
@@ -17,6 +17,10 @@ int main()
 	analysis.open("analysis.csv");
 	int start, end;
 	int overall_best = GRAPH_VERTICES * MAX_WEIGHT;
+	int totalGenerations;
+	int totalBestFitness;
+	int overallBestFitness;
+	int runStart;
 
 	// This is all you need to seed based on time
 	// Will now output seed to screen and file for troubleshooting
@@ -34,18 +38,71 @@ int main()
 	original->print(trees);
 	trees << endl;
 
+	// ===== Dandelion Run =====
+
+	
+
+	// Stats for GA
+	totalGenerations = 0;
+	totalBestFitness = 0;
+	overallBestFitness = maximum_weight;
+	runStart = time(NULL);
+
+	out_file << " Dandelion Mutation Run, Best Fitness, Generations, Time" << endl;
+
+	// run the GA 'runs' amount of times
+	for (int j = 0; j < runs; j++)
+	{
+		// instance of the prufer
+		dandelion * d = new dandelion(original);
+
+		// record start time
+		start = time(NULL);
+
+		// run the GA
+		while (d->staleness < max_staleness)
+			d->run_generation();
+
+		// get the end time
+		end = time(NULL);
+
+		// record stats
+		totalGenerations += d->generations;
+		totalBestFitness += d->bestFitness;
+		if (d->bestFitness < overallBestFitness)
+		{
+			overallBestFitness = d->bestFitness;
+			assert(d->population[0]->is_valid());
+			delete best_tree;
+			best_tree = d->decode(d->population[0]);
+			assert(best_tree->isInConstraint());
+		}
+
+		// output stats
+		out_file << j << ", " << d->bestFitness << ", " << d->generations << ", " << end - start << endl;
+		cout << "Dandelion Mutation Run: " << j << " | Best Fitness: " << d->bestFitness << " | Generations: " << d->generations << " | Time: " << end - start << endl;
+
+		// delete and recreate GA
+		delete d;
+		//d = new dandelion(original);
+	}
+	// output final stats & delete GA
+	cout << "Finished Dandelion Mutation Run | Best Fitness: " << overallBestFitness << " | Avg End Fitness: " << (float)totalBestFitness / runs << " | Avg Generations: " << (float)totalGenerations / runs << " | Time: " << time(NULL) - runStart << endl;
+	out_file << endl;
+	// delete d;
+
 	// ===== Prufer Run =====
 
 	// instance of the prufer
 	prufer * p = new prufer(original);
 
 	// Stats for GA
-	int totalGenerations = 0;
-	int totalBestFitness = 0;
-	int overallBestFitness = p->bestFitness;
-	int runStart = time(NULL);
+	totalGenerations = 0;
+	totalBestFitness = 0;
+	overallBestFitness = p->bestFitness;
+	runStart = time(NULL);
 
-	out_file << " Prufer Mutation p Run, Best Fitness, Generations, Time" << endl;
+	out_file << " Prufer Mutation Run, Best Fitness, Generations, Time" << endl;
 
 	// run the GA 'runs' amount of times
 	for (int j = 0; j < runs; j++)
@@ -74,14 +131,14 @@ int main()
 
 		// output stats
 		out_file << j << ", " << p->bestFitness << ", " << p->generations << ", " << end - start << endl;
-		cout << "Prufer Mutation p Run: " << j << " | Best Fitness: " << p->bestFitness << " | Generations: " << p->generations << " | Time: " << end - start << endl;
+		cout << "Prufer Mutation Run: " << j << " | Best Fitness: " << p->bestFitness << " | Generations: " << p->generations << " | Time: " << end - start << endl;
 
 		// delete and recreate GA
 		delete p;
 		p = new prufer(original);
 	}
 	// output final stats & delete GA
-	cout << "Finished Prufer Mutation p Run | Best Fitness: " << overallBestFitness << " | Avg End Fitness: " << (float)totalBestFitness / runs << " | Avg Generations: " << (float)totalGenerations / runs << " | Time: " << time(NULL) - runStart << endl;
+	cout << "Finished Prufer Mutation Run | Best Fitness: " << overallBestFitness << " | Avg End Fitness: " << (float)totalBestFitness / runs << " | Avg Generations: " << (float)totalGenerations / runs << " | Time: " << time(NULL) - runStart << endl;
 	out_file << endl;
 	delete p;
 
@@ -90,6 +147,54 @@ int main()
 	best_tree->print(trees);
 	trees << endl;
 	analysis << best_tree->fitness() << ",";
+
+	// ===== Greedy Run =====
+
+	//instance of Greedy
+	Greedy * greedy = new Greedy(original);
+
+	// Stats for greedy algorithm
+	int counter;
+	float g_totalBestFitness = 0;
+	int g_overallBestFitness = GRAPH_VERTICES * MAX_WEIGHT;
+	int g_trees_found = 0;
+	Graph * g_overall_best_tree = new Graph(false);
+	start = time(NULL);
+
+	for (int i = 0; i < runs; i++)
+	{
+		counter = 0;
+		while (!greedy->best_tree->isGraphConnected() && counter < GRAPH_VERTICES + 1) // counter allows loop to exit if connected graph not possible
+		{
+			greedy->find_shortest_edge();
+			counter++;
+		}
+
+		greedy->fitness();
+		if (greedy->bestFitness > 0) // valid graph found
+		{
+			g_totalBestFitness += greedy->bestFitness;
+			g_trees_found++;
+			if (greedy->bestFitness < g_overallBestFitness)
+			{
+				g_overallBestFitness = greedy->bestFitness;
+				g_overall_best_tree->copy(greedy->best_tree);
+			}
+		}
+		delete greedy;
+		greedy = new Greedy(original);
+	}
+
+	end = time(NULL);
+
+	out_file << "Best Overall (greedy): " << g_overallBestFitness << " | Average Best: " << g_totalBestFitness / g_trees_found << " | Valid trees found: " << g_trees_found << " | Runs: " << runs << " | Time: " << end - start << endl;
+	cout << "Best Overall (greedy): " << g_overallBestFitness << " | Average Best: " << g_totalBestFitness / g_trees_found << " | Valid trees found: " << g_trees_found << " | Runs: " << runs << " | Time: " << end - start << endl;
+
+
+	trees << endl << "Best tree vertices (greedy):\n";
+	g_overall_best_tree->print(trees);
+	trees << endl;
+	analysis << g_overall_best_tree->fitness() << ",";
 
 	// ===== AL Run =====
 
@@ -141,55 +246,7 @@ int main()
 	best_tree->print(trees);
 	trees << endl;
 	analysis << best_tree->fitness() << ",";
-	delete best_tree;
-	
-	// ===== Greedy Run =====
-
-	//instance of Greedy
-	Greedy * greedy = new Greedy(original);
-
-	// Stats for greedy algorithm
-	int counter;
-	float g_totalBestFitness = 0;
-	int g_overallBestFitness = GRAPH_VERTICES * MAX_WEIGHT;
-	int g_trees_found = 0;
-	Graph * g_overall_best_tree = new Graph(false);
-	start = time(NULL);
-
-	for (int i = 0; i < runs; i++)
-	{
-		counter = 0;
-		while (!greedy->best_tree->isGraphConnected() && counter < GRAPH_VERTICES + 1) // counter allows loop to exit if connected graph not possible
-		{
-			greedy->find_shortest_edge();
-			counter++;
-		}
-
-		greedy->fitness();
-		if (greedy->bestFitness > 0) // valid graph found
-		{
-			g_totalBestFitness += greedy->bestFitness;
-			g_trees_found++;
-			if (greedy->bestFitness < g_overallBestFitness)
-			{
-				g_overallBestFitness = greedy->bestFitness;
-				g_overall_best_tree->copy(greedy->best_tree);
-			}
-		}
-		delete greedy;
-		greedy = new Greedy(original);
-	}
-
-	end = time(NULL);
-
-	out_file << "Best Overall (greedy): " << g_overallBestFitness << " | Average Best: " << g_totalBestFitness / g_trees_found << " | Valid trees found: " << g_trees_found << " | Runs: " << runs << " | Time: " << end - start << endl;
-	cout << "Best Overall (greedy): " << g_overallBestFitness << " | Average Best: " << g_totalBestFitness / g_trees_found << " | Valid trees found: " << g_trees_found << " | Runs: " << runs << " | Time: " << end - start << endl;
-
-
-	trees << endl << "Best tree vertices (greedy):\n";
-	g_overall_best_tree->print(trees);
-	trees << endl;
-	analysis << g_overall_best_tree->fitness() << ",";
+	// delete best_tree;
 
 	cout << "Deleting Extras" << endl;
 
