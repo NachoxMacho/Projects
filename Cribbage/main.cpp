@@ -26,7 +26,7 @@ int main()
 	deck full_deck(true); // a whole deck of cards
 	p1 = new player(); // the first player
 	bob = new AI();
-	dealer = bob; // assign dealer to p1 ( FIX: make this random)
+	dealer = (rand() % 2 == 0)? bob: p1; // assign dealer to a random player
 
 	// the game is a race to 121 points
 	// while nobody has won the game
@@ -70,8 +70,9 @@ int main()
 				player_turn = !player_turn;
 			}
 
-			card playing;
+			card playing; // the card that the current_player is playing
 
+			// if the player should go, output the stats and cards played so they can see
 			if (player_turn)
 			{
 				// output stats
@@ -83,6 +84,7 @@ int main()
 				// have the player select a card from their hand to be played
 				playing = p1->play_peg_card(std::cout, current_score);
 			}
+			// otherwise no need to output for the AI
 			else
 				playing = bob->play_peg_card(current_score, played);
 
@@ -99,7 +101,7 @@ int main()
 					played.clear();
 					current_score = 0;
 				}
-				// only on e player has passed
+				// only one player has passed
 				else
 				{
 					std::cout << "GO" << std::endl;
