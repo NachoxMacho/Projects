@@ -6,12 +6,7 @@
 int main()
 {
 	// set the random seed so each game is different
-	// 1549039473 next
-	//*/
 	int seed = time(NULL);
-	/*/
-	int seed = 1549045139;
-	//*/
 	srand(seed);
 	// output seed to terminal for troubleshooting
 	std::cout << "Seed: " << seed << std::endl;
@@ -19,12 +14,12 @@ int main()
 
 	// create the players and dealer pointers
 	player * p1; // pointer to player 1
-	AI * bob;
+	AI * bob; // the AI for the player to play against
 	player *dealer; // pointer to the dealer, which is the person with the crib | will be equal to p1 or p2
 
 	deck full_deck(true); // a whole deck of cards
 	p1 = new player(); // the first player
-	bob = new AI();
+	bob = new AI(); // create the AI (this shouldn't do anything besides create the AI class)
 	dealer = (rand() % 2 == 0)? bob: p1; // assign dealer to a random player
 
 	// the game is a race to 121 points
@@ -40,7 +35,7 @@ int main()
 		bob->pick_crib_cards(dealer);
 
 		// cut a card from the rest of the deck
-		card flip = full_deck.draw();
+		card flip = full_deck.draw(); // the cut card
 
 		std::cout << "--------------------" << std::endl;
 		std::cout << "The flipped card is "; flip.print(std::cout); std::cout << std::endl;
@@ -57,7 +52,7 @@ int main()
 
 		deck played; // a list of cards played sinc eht last 31 or go
 		bool go = false; // if a player can't play
-		bool player_turn = (dealer != p1);
+		bool player_turn = (dealer != p1); // if it's the player's turn ( meaning player != dealer)
 
 		while (p1->hand_size() > 0 || bob->hand_size() > 0)
 		{
