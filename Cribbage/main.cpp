@@ -1,5 +1,4 @@
 #include <iostream> // for input and output
-#include <algorithm> // for sorting
 #include <ctime> // for setting the seed based on time
 #include "cards.h" // for all the cards
 #include "ai.h" // for bob

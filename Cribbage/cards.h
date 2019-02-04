@@ -1,6 +1,7 @@
 #pragma once // make sure this header file is only compiled once
 #include <vector> // for the list of cards
 #include <cassert> // for assertions 
+#include <algorithm> // for sorting
 
 // how many cards each player is dealt for each hand
 #define max_hand_size 6
