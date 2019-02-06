@@ -1,5 +1,5 @@
 ## Projects  
-A collection of my projects.  I work on a wide range of topics from playing games to computer vision. Below is a list of projects i'm currently working on and all the projects I have done in the past.
+A collection of my projects.  I work on a wide range of topics from playing games to computer vision. Below is a list of projects I'm currently working on and all the projects I have done in the past.
 
 ### Currently working on:
 * Cribbage
