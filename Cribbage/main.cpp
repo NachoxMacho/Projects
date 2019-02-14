@@ -32,9 +32,7 @@ int main()
 		{
 			// output progress every 1000 hands
 			if (hands_played % 10000 == 0 && hands_played > 0)
-			{
 				std::cout << "Total: " << total_score << " | Hands: " << hands_played << " | Average: " << (float)total_score / hands_played  << "| Crib Average: " << (float)total_crib_score  / hands_played << std::endl;
-			}
 
 			// Draw the cards to the hand
 			b->draw_hand(full_deck);
@@ -58,14 +56,10 @@ int main()
 
 			// every other hand, subtract the crib from the total
 			if (hands_played % 2 == 1)
-			{
 				total_crib_score -= crib_score;
-			}
 			// else add the crib to the total
 			else
-			{
 				total_crib_score += crib_score;
-			}
 
 			// reset deck and hands
 			full_deck = deck(true);
