@@ -1,7 +1,11 @@
 #include <iostream> // for input and output
+#include <fstream> // for file output
 #include <ctime> // for setting the seed based on time
 #include "cards.h" // for all the cards
 #include "ai.h" // for bob
+
+#define play false
+#define test_hands 2000000
 
 int main()
 {
@@ -11,6 +15,69 @@ int main()
 	// output seed to terminal for troubleshooting
 	std::cout << "Seed: " << seed << std::endl;
 	std::cout << "--------------------" << std::endl;
+
+	// researching hand discarding
+	if (!play)
+	{
+		// initalize variables
+		AI * b = new AI(); // the AI that will evaluate hands
+		int total_score = 0; // the total score of the hands
+		int total_crib_score = 0; // the total score for the crib
+		int hands_played = 0; // the number of hands played
+		int total_flushes = 0; // the amount of flushes hit
+		int total_perfects = 0; // the number of perfect hands gained
+		deck full_deck(true); // a whole deck of cards
+
+		for (hands_played; hands_played < test_hands; hands_played++)
+		{
+			// output progress every 1000 hands
+			if (hands_played % 10000 == 0 && hands_played > 0)
+			{
+				std::cout << "Total: " << total_score << " | Hands: " << hands_played << " | Average: " << (float)total_score / hands_played  << "| Crib Average: " << (float)total_crib_score  / hands_played << std::endl;
+			}
+
+			// Draw the cards to the hand
+			b->draw_hand(full_deck);
+
+			// add 2 random cards to the crib
+			b->crib += full_deck.draw();
+			b->crib += full_deck.draw();
+
+			// cut a card from the remaining deck
+			card cut = full_deck.draw();
+
+			// score hands and crib
+			int hand_score = b->score_hand(cut);
+			int crib_score = b->score_crib(cut);
+			total_score += hand_score;
+
+			if (hand_score == 29)
+				total_perfects++;
+			if (b->is_flush(b->hand))
+				total_flushes++;
+
+			// every other hand, subtract the crib from the total
+			if (hands_played % 2 == 1)
+			{
+				total_crib_score -= crib_score;
+			}
+			// else add the crib to the total
+			else
+			{
+				total_crib_score += crib_score;
+			}
+
+			// reset deck and hands
+			full_deck = deck(true);
+			b->hand.clear();
+			b->crib.clear();
+		}
+
+		std::cout << "Total: " << total_score << " | Hands: " << hands_played << " | Average: " << (float)total_score / hands_played << "| Crib Average: " << total_crib_score / hands_played << std::endl;
+		std::cout << "Flushes: " << total_flushes << " | Average: " << (float)total_flushes / hands_played << " | Perfects: " << total_perfects << " | Average: " << (float)total_perfects / hands_played << std::endl;
+		delete b;
+		return 0;
+	}
 
 	// create the players and dealer pointers
 	player * p1; // pointer to player 1
