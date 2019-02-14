@@ -119,9 +119,11 @@ public:
 		suits s = h[0].Suit();
 		for (int i = 1; i < h.size(); i++)
 		{
+			// if a different suit is found, there is no flush
 			if (h[i].Suit() != s)
 				return false;
 		}
+		// otherwise all the cards in 'h' are the same suit
 		return true;
 	}
 
@@ -143,7 +145,7 @@ public:
 			if (hand[i].Value() + running_total > 31)
 				continue;
 
-			int p_score = 0;
+			int p_score = 0; // the potential score of playing this card
 
 			// if playing a card makes 15 or 31, it's worth 2 points
 			if (running_total + hand[i].Value() == 15) { p_score += 2; }
@@ -157,7 +159,7 @@ public:
 			// if the first card matches, 2 points are added equaling 2 points total
 			// if the second card matches, another 4 points are added equaling 6 points total
 			// if the third card matches, another 6 points are added equaling 12 points total
-			for (int j = 1; j < played.size(); j++)
+			for (int j = 1; j < played.size() + 1; j++)
 			{
 				if (played[played.size() - j].Rank() == hand[i].Rank()) { p_score += 2 * j; }
 				// stop as soon as cards aren't matching
