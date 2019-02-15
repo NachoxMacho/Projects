@@ -1,5 +1,4 @@
 #include <iostream> // for input and output
-#include <fstream> // for file output
 #include <ctime> // for setting the seed based on time
 #include "cards.h" // for all the cards
 #include "ai.h" // for bob
@@ -21,18 +20,20 @@ int main()
 	{
 		// initalize variables
 		AI * b = new AI(); // the AI that will evaluate hands
+		int hands[29] { 0 }; // the list of scored hands
 		int total_score = 0; // the total score of the hands
 		int total_crib_score = 0; // the total score for the crib
 		int hands_played = 0; // the number of hands played
 		int total_flushes = 0; // the amount of flushes hit
-		int total_perfects = 0; // the number of perfect hands gained
 		deck full_deck(true); // a whole deck of cards
 
 		for (hands_played; hands_played < test_hands; hands_played++)
 		{
 			// output progress every 1000 hands
-			if (hands_played % 10000 == 0 && hands_played > 0)
-				std::cout << "Total: " << total_score << " | Hands: " << hands_played << " | Average: " << (float)total_score / hands_played  << "| Crib Average: " << (float)total_crib_score  / hands_played << std::endl;
+			if (hands_played % 100000 == 0 && hands_played > 0)
+				std::cout << "Total: " << total_score << " | Hands: " << hands_played << 
+					" | Average: " << (float)total_score / hands_played  << 
+					" | Crib Average: " << (float)total_crib_score  / hands_played << std::endl;
 
 			// Draw the cards to the hand
 			b->draw_hand(full_deck);
@@ -40,6 +41,9 @@ int main()
 			// add 2 random cards to the crib
 			b->crib += full_deck.draw();
 			b->crib += full_deck.draw();
+
+			// pick the cards to send to the crib
+			b->pick_crib_cards(b);
 
 			// cut a card from the remaining deck
 			card cut = full_deck.draw();
@@ -49,8 +53,11 @@ int main()
 			int crib_score = b->score_crib(cut);
 			total_score += hand_score;
 
-			if (hand_score == 29)
-				total_perfects++;
+			// tally the hand score
+			if (hand_score > -1 && hand_score < 30) hands[hand_score]++;
+			else std::cout << "Score out of bounds " << hand_score << std::endl;
+
+			// if a flush is gained
 			if (b->is_flush(b->hand))
 				total_flushes++;
 
@@ -67,9 +74,20 @@ int main()
 			b->crib.clear();
 		}
 
-		std::cout << "Total: " << total_score << " | Hands: " << hands_played << " | Average: " << (float)total_score / hands_played << "| Crib Average: " << total_crib_score / hands_played << std::endl;
-		std::cout << "Flushes: " << total_flushes << " | Average: " << (float)total_flushes / hands_played << " | Perfects: " << total_perfects << " | Average: " << (float)total_perfects / hands_played << std::endl;
+		// output stats
+		std::cout << "------------------------------------------------------------------------------" << std::endl;
+		std::cout << "Total: " << total_score << " | Hands: " << hands_played << 
+			" | Average: " << (float)total_score / hands_played << 
+			" | Crib Average: " << total_crib_score / hands_played << std::endl;
+		std::cout << "Flushes: " << total_flushes << " | Percent: " << (float)total_flushes / hands_played * 100 << 
+			" | Perfects: " << hands[29] << " | Percent: " << (float)hands[29] / hands_played * 100 << std::endl;
+
+		for (int i = 0; i < 30; i++) std::cout << "Score: " << i << " | Number: " << hands[i] << " | Percent: " << (float)hands[i] / hands_played * 100 << std::endl;
+		
+		// delete the AI pointer
 		delete b;
+
+		// don't run the rest of the program
 		return 0;
 	}
 

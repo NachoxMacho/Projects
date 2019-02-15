@@ -12,8 +12,21 @@ public:
 	// this version does not accept an std::ostream as an argument
 	// will not return anything and will put 2 cards in the dealer's hand
 	// note the dealer can be a pointer to the AI itself for when it should ad cards to it's own hand
-	void pick_crib_cards(player * dealer)
+	// if 'random' is set to true, will pick the first 2 cards from the hand regardless of what they are
+	void pick_crib_cards(player * dealer, bool random = false)
 	{
+		if (random)
+		{
+			dealer->crib += hand[0];
+			dealer->crib += hand[1];
+
+			// remove the cards from the hand
+			hand.remove(0);
+			hand.remove(0);
+
+			return;
+		}
+
 		int c1; // this is the first card to remove to get the best hand
 		int c2; // this is the second card to remove to get the best hand
 		int best_potential = -1; // this is the current best potential a hand has
