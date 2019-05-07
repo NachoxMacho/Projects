@@ -6,6 +6,8 @@
 #define play false
 #define test_hands 2000000
 
+// testing
+
 int main()
 {
 	// set the random seed so each game is different
