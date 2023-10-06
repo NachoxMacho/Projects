@@ -1,5 +1,6 @@
 #pragma once
-#include "cards.h" // to get the player and cards
+#include "cards.h" // to get the player and CARDS
+#include "deck.h"
 
 // ===== AI =====
 // The AI is an extension of the player class

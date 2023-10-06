@@ -1,6 +1,8 @@
 #include <iostream> // for input and output
 #include <ctime> // for setting the seed based on time
 #include "cards.h" // for all the cards
+#include "deck.h"
+#include "player.h"
 #include "ai.h" // for bob
 
 #define play false
@@ -22,14 +24,14 @@ int main()
 	{
 		// initalize variables
 		AI * b = new AI(); // the AI that will evaluate hands
-		int hands[29] { 0 }; // the list of scored hands
+		int hands[30] { 0 }; // the list of scored hands
 		int total_score = 0; // the total score of the hands
 		int total_crib_score = 0; // the total score for the crib
 		int hands_played = 0; // the number of hands played
 		int total_flushes = 0; // the amount of flushes hit
 		deck full_deck(true); // a whole deck of cards
 
-		for (hands_played; hands_played < test_hands; hands_played++)
+		for (/*hands_played*/; hands_played < test_hands; hands_played++)
 		{
 			// output progress every 1000 hands
 			if (hands_played % 100000 == 0 && hands_played > 0)
@@ -95,25 +97,25 @@ int main()
 
 	// create the players and dealer pointers
 	player * p1; // pointer to player 1
-	AI * bob; // the AI for the player to play against
+	AI * ai; // the AI for the player to play against
 	player *dealer; // pointer to the dealer, which is the person with the crib | will be equal to p1 or p2
 
 	deck full_deck(true); // a whole deck of cards
 	p1 = new player(); // the first player
-	bob = new AI(); // create the AI (this shouldn't do anything besides create the AI class)
-	dealer = (rand() % 2 == 0)? bob: p1; // assign dealer to a random player
+	ai = new AI(); // create the AI (this shouldn't do anything besides create the AI class)
+	dealer = (rand() % 2 == 0)? ai: p1; // assign dealer to a random player
 
 	// the game is a race to 121 points
 	// while nobody has won the game
-	while (p1->score < 121 && bob->score < 121)
+	while (p1->score < 121 && ai->score < 121)
 	{
 		// "deal" the cards to each player
 		p1->draw_hand(full_deck);
-		bob->draw_hand(full_deck);
+		ai->draw_hand(full_deck);
 
 		// have each player select the cards to throw to the dealer
 		p1->pick_crib_cards(dealer, std::cout);
-		bob->pick_crib_cards(dealer);
+		ai->pick_crib_cards(dealer);
 
 		// cut a card from the rest of the deck
 		card flip = full_deck.draw(); // the cut card
@@ -128,20 +130,20 @@ int main()
 		// this section is dealing with pegging
 		int current_score = 0; // this is the running total
 
-		player * current_player = (dealer == p1) ? bob : p1; // whoever's turn it is to play a card
+		player * current_player = (dealer == p1) ? ai : p1; // whoever's turn it is to play a card
 		player * last_card_played; // the last player to play a card
 
 		deck played; // a list of cards played sinc eht last 31 or go
 		bool go = false; // if a player can't play
 		bool player_turn = (dealer != p1); // if it's the player's turn ( meaning player != dealer)
 
-		while (p1->hand_size() > 0 || bob->hand_size() > 0)
+		while (p1->hand_size() > 0 || ai->hand_size() > 0)
 		{
 			// if a player's hand is empty and the other's isn't, other player plays remaining cards
 			if (current_player->hand_size() == 0)
 			{
 				// swap player
-				current_player = (current_player == p1) ? bob : p1;
+				current_player = (current_player == p1) ? ai : p1;
 				player_turn = !player_turn;
 			}
 
@@ -151,7 +153,7 @@ int main()
 			if (player_turn)
 			{
 				// output stats
-				std::cout << "Total: " << current_score << " | P1: " << p1->score << " | PB: " << bob->score << std::endl;
+				std::cout << "Total: " << current_score << " | P1: " << p1->score << " | PB: " << ai->score << std::endl;
 				played.print(std::cout);
 
 				std::cout << std::endl << "--------------------" << std::endl;
@@ -161,7 +163,7 @@ int main()
 			}
 			// otherwise no need to output for the AI
 			else
-				playing = bob->play_peg_card(current_score, played);
+				playing = ai->play_peg_card(current_score, played);
 
 			// if no card can be played
 			if (playing == card())
@@ -194,7 +196,7 @@ int main()
 			std::cout << "--------------------" << std::endl;
 			current_score += playing.Value(); // add value to 'current_score'
 			last_card_played = current_player; // set 'last_card_played' player to current player
-			current_player = (current_player == p1) ? bob : p1; // swap the current player
+			current_player = (current_player == p1) ? ai : p1; // swap the current player
 			player_turn = !player_turn; // swap the player turn
 
 			// if playing the card makes 15, the 'last_card_played' player gets 2 points
@@ -271,7 +273,7 @@ int main()
 
 		// reset players hands to before pegging
 		p1->return_played();
-		bob->return_played();
+		ai->return_played();
 		last_card_played->score++;
 
 		// output round stats
@@ -281,22 +283,22 @@ int main()
 		std::cout << std::endl;
 		std::cout << "Player 1 Hand scores " << p1->score_hand(flip) << std::endl;
 		p1->hand_print(std::cout); std::cout << std::endl;
-		std::cout << "Player B Hand scores " << bob->score_hand(flip) << std::endl;
-		bob->hand_print(std::cout); std::cout << std::endl;
+		std::cout << "Player B Hand scores " << ai->score_hand(flip) << std::endl;
+		ai->hand_print(std::cout); std::cout << std::endl;
 		std::cout << "Crib scores " << dealer->score_crib(flip) << std::endl;
 		dealer->crib_print(std::cout); std::cout << std::endl;
-		std::cout << "Score is " << p1->score << " to " << bob->score << std::endl;
+		std::cout << "Score is " << p1->score << " to " << ai->score << std::endl;
 		std::cout << "--------------------" << std::endl;
 
 		// change the dealer and clear the crib
 		dealer->crib.clear();
-		dealer = (dealer == p1) ? bob : p1;
+		dealer = (dealer == p1) ? ai : p1;
 
 		// reset the deck
 		full_deck = deck(true);
 	}
 
 	// after the game is done, delete the players and return
-	delete p1, bob;
+	delete p1, ai;
 	return 0;
 }
